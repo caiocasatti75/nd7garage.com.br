@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Administrativo | ND7 Garage</title>
+  <meta name="robots" content="noindex, nofollow" />
+  
+  <!-- Favicon e Ícones em PNG -->
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <meta name="theme-color" content="#e51926" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Políticas de Segurança e Proteção (CSP, Anti-Sniff, Referrer) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https: wss:; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self';" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  
+  <style>
+    /* Wrapper do Painel Autenticado - Oculto até validação de sessão */
+    #adminAppWrapper {
+      display: none;
+    }
+    #adminAppWrapper.authenticated {
+      display: block !important;
+    }
+
+    /* Estilos Específicos do Painel Administrativo */
+    .admin-body {
+      background-color: #0b0b0f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .admin-navbar {
+      background-color: #121218;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+    }
+
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .admin-tag {
+      background: rgba(245, 184, 0, 0.15);
+      border: 1px solid var(--color-gold);
+      color: var(--color-gold);
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.65rem;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .admin-tabs {
+      background-color: #16161f;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.5rem 1.5rem 0;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .admin-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 3px solid transparent;
+      transition: var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .admin-tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .admin-tab-btn.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+      background: rgba(229, 25, 38, 0.05);
+    }
+
+    .admin-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem 4rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .admin-tab-content {
+      display: none;
+    }
+
+    .admin-tab-content.active {
+      display: block;
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .kpi-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon.blue { background: rgba(56, 151, 240, 0.15); color: #3897f0; }
+    .kpi-icon.green { background: rgba(37, 211, 102, 0.15); color: #25d366; }
+    .kpi-icon.orange { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
+    .kpi-icon.gold { background: rgba(245, 184, 0, 0.15); color: #f5b800; }
+
+    .kpi-info h4 {
+      font-size: 0.8rem;
+      color: var(--color-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+
+    .kpi-info .kpi-val {
+      font-family: var(--font-heading);
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    /* Barra de Ações do Estoque */
+    .admin-toolbar {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .admin-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .admin-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Barra de Busca de Leads e Veículos com Design Moderno */
+    .search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 320px;
+      background: #14141d;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .search-input-wrap:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: #181824;
+    }
+
+    .search-input-wrap:focus-within {
+      border-color: var(--color-gold);
+      background: #1a1a28;
+      box-shadow: 0 0 0 3px rgba(245, 184, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 1.1rem;
+      color: var(--color-gold);
+      pointer-events: none;
+      transition: transform 0.2s ease, color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .search-input-wrap:focus-within svg {
+      color: #ffd54f;
+      transform: scale(1.12);
+    }
+
+    .admin-search-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 1.25rem 0 3rem;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .admin-search-input::placeholder {
+      color: #828292;
+      font-size: 0.88rem;
+      font-weight: 400;
+    }
+
+    .select-filter {
+      height: 44px;
+      background-color: #14141d;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      padding: 0 2.2rem 0 1rem;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.25s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23808092' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+    }
+
+    .select-filter:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background-color: #181824;
+    }
+
+    .select-filter:focus {
+      border-color: var(--color-gold);
+      box-shadow: 0 0 0 3px rgba(245, 184, 0, 0.15);
+    }
+
+    /* Tabela de Gestão de Veículos */
+    .admin-table-container {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: var(--shadow-card);
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .admin-table th {
+      background: #14141c;
+      padding: 1rem 1.25rem;
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-subtle);
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+
+    .admin-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+      color: var(--color-text-muted);
+    }
+
+    .admin-table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .car-thumb-small {
+      width: 65px;
+      height: 48px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #000;
+      border: 1px solid var(--color-border);
+    }
+
+    .car-title-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .car-name-bold {
+      font-weight: 700;
+      color: #ffffff;
+      display: block;
+      line-height: 1.2;
+    }
+
+    .car-sub-text {
+      font-size: 0.78rem;
+      color: var(--color-text-subtle);
+    }
+
+    /* Switch Toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      vertical-align: middle;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-toggle {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #2b2b36;
+      transition: .3s;
+      border-radius: 34px;
+      border: 1px solid var(--color-border);
+    }
+
+    .slider-toggle:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider-toggle {
+      background-color: var(--color-whatsapp);
+      border-color: var(--color-whatsapp);
+    }
+
+    input:checked + .slider-toggle:before {
+      transform: translateX(24px);
+    }
+
+    /* Switch especial para Destaque */
+    input.star-toggle:checked + .slider-toggle {
+      background-color: var(--color-gold);
+      border-color: var(--color-gold);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-badge.active {
+      background: rgba(37, 211, 102, 0.15);
+      color: #25d366;
+      border: 1px solid rgba(37, 211, 102, 0.3);
+    }
+
+    .status-badge.inactive {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text-subtle);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .action-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-input);
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .icon-btn:hover {
+      color: #ffffff;
+      border-color: var(--color-primary);
+      background: rgba(229, 25, 38, 0.15);
+    }
+
+    .icon-btn.danger:hover {
+      border-color: #ff3838;
+      background: rgba(255, 56, 56, 0.2);
+      color: #ff3838;
+    }
+
+    /* Cards de Configuração */
+    .admin-form-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      box-shadow: var(--shadow-card);
+      max-width: 900px;
+    }
+
+    .admin-form-card h3 {
+      font-size: 1.35rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .admin-form-card p.card-sub {
+      color: var(--color-text-subtle);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ======================================================================
+       CRM & CONTATOS / ATENDIMENTOS (CAIO & EDUARDO)
+       ====================================================================== */
+    .badge-attendant {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-caio {
+      background: rgba(0, 140, 255, 0.15);
+      border: 1px solid rgba(0, 140, 255, 0.5);
+      color: #38b6ff;
+    }
+
+    .badge-eduardo {
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid rgba(0, 230, 118, 0.5);
+      color: #00e676;
+    }
+
+    .badge-waiting {
+      background: rgba(255, 179, 0, 0.15);
+      border: 1px solid rgba(255, 179, 0, 0.5);
+      color: #ffca28;
+    }
+
+    .attendant-select-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .attendant-quick-select {
+      background: #14141d;
+      border: 1px solid var(--color-border);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .attendant-quick-select:focus {
+      border-color: var(--color-gold);
+      outline: none;
+    }
+
+    .lead-status-pill {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .lead-status-novo {
+      background: rgba(245, 184, 0, 0.15);
+      color: var(--color-gold);
+      border: 1px solid rgba(245, 184, 0, 0.35);
+    }
+
+    .lead-status-atendimento {
+      background: rgba(0, 140, 255, 0.15);
+      color: #38b6ff;
+      border: 1px solid rgba(0, 140, 255, 0.35);
+    }
+
+    .lead-status-visita {
+      background: rgba(186, 104, 200, 0.15);
+      color: #ba68c8;
+      border: 1px solid rgba(186, 104, 200, 0.35);
+    }
+
+    .lead-status-concluido {
+      background: rgba(0, 230, 118, 0.15);
+      color: #00e676;
+      border: 1px solid rgba(0, 230, 118, 0.35);
+    }
+
+    .lead-status-arquivado {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-subtle);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .lead-contact-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-contact-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: var(--transition-fast);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-contact-wa {
+      background: #25d366;
+      color: #081b10;
+    }
+
+    .btn-contact-wa:hover {
+      background: #2fe471;
+      transform: translateY(-1px);
+    }
+
+    .btn-contact-call {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-contact-call:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffffff;
+    }
+
+    /* Barra de Busca de Leads e Gestão de Contatos CRM (Visual Moderno & Elegante) */
+    .lead-toolbar {
+      background: linear-gradient(180deg, #161622 0%, #111118 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .lead-search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 320px;
+      max-width: 520px;
+      background: #0d0d14;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+      padding: 0 1.25rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+    }
+
+    .lead-search-box:hover {
+      border-color: rgba(245, 184, 0, 0.4);
+      background: #11111a;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .lead-search-box:focus-within {
+      border-color: var(--color-gold);
+      background: #13131e;
+      box-shadow: 0 0 0 3.5px rgba(245, 184, 0, 0.22), 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .lead-search-box .search-icon {
+      color: var(--color-gold);
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .lead-search-box:focus-within .search-icon {
+      color: #ffca28;
+      transform: scale(1.15);
+    }
+
+    .lead-search-input-field {
+      width: 100%;
+      height: 46px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .lead-search-input-field::placeholder {
+      color: #8c8c9e;
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+
+    .lead-search-clear-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #a0a0b0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 800;
+      transition: all 0.2s ease;
+      margin-left: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .lead-search-clear-btn:hover {
+      background: #ff3b30;
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+
+    .lead-filters-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .lead-select-filter {
+      height: 46px;
+      background-color: #0d0d14;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      padding: 0 2.4rem 0 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.25s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f5b800' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+    }
+
+    .lead-select-filter:hover {
+      border-color: rgba(245, 184, 0, 0.4);
+      background-color: #12121c;
+    }
+
+    .lead-select-filter:focus {
+      border-color: var(--color-gold);
+      box-shadow: 0 0 0 3px rgba(245, 184, 0, 0.2);
+    }
+
+    /* Modais do Painel Administrativo */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      padding: 1.5rem;
+    }
+
+    .modal-backdrop.open,
+    .modal-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      background-color: #14141d;
+      border: 1px solid rgba(229, 25, 38, 0.35);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.95);
+      transform: scale(0.96);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-backdrop.open .modal-dialog,
+    .modal-backdrop.active .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1.25rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--color-border);
+      color: #ffffff;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      z-index: 2;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    /* ======================================================================
+       TELA DE BLOQUEIO / GATE DE SEGURANÇA (LOGIN E SMS)
+       ====================================================================== */
+    .security-gate-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 8, 0.96);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .security-gate-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .security-card {
+      max-width: 480px;
+      width: 100%;
+      background: #14141c;
+      border: 1px solid rgba(229, 25, 38, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 2.75rem 2.25rem;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+      position: relative;
+    }
+
+    .security-logo-wrap {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .security-logo-img {
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid rgba(245, 184, 0, 0.4);
+      filter: drop-shadow(0 4px 12px rgba(229, 25, 38, 0.4));
+    }
+
+    .security-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-align: center;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+    }
+
+    .security-subtitle {
+      color: var(--color-text-subtle);
+      font-size: 0.88rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-method-nav {
+      display: flex;
+      background: #1d1d28;
+      border-radius: var(--radius-sm);
+      padding: 0.3rem;
+      margin-bottom: 1.75rem;
+      border: 1px solid var(--color-border);
+    }
+
+    .auth-method-btn {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-align: center;
+    }
+
+    .auth-method-btn.active {
+      background: var(--color-primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(229, 25, 38, 0.4);
+    }
+
+    .auth-view {
+      display: none;
+    }
+
+    .auth-view.active {
+      display: block;
+    }
+
+    .password-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 0.75rem;
+      background: transparent;
+      border: none;
+      color: var(--color-text-subtle);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .password-toggle-btn:hover {
+      color: #ffffff;
+    }
+
+    .otp-display-box {
+      background: rgba(37, 211, 102, 0.08);
+      border: 1px dashed var(--color-whatsapp);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      text-align: left;
+    }
+
+    .otp-display-box p {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .otp-display-box strong {
+      color: #ffffff;
+    }
+
+    .otp-input-field {
+      font-family: monospace;
+      font-size: 1.6rem;
+      letter-spacing: 8px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--color-gold);
+    }
+
+    @media (max-width: 992px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .security-card { padding: 2rem 1.5rem; }
+    }
+
+    /* ======================================================================
+       GERENCIADOR DE FOTOS MÚLTIPLAS DO VEÍCULO (UPLOAD DIRETO SEM LINK)
+       ====================================================================== */
+    .photos-dropzone {
+      border: 2px dashed rgba(245, 184, 0, 0.45);
+      background: rgba(20, 20, 29, 0.85);
+      border-radius: 12px;
+      padding: 1.75rem 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      position: relative;
+    }
+
+    .photos-dropzone:hover,
+    .photos-dropzone.dragover {
+      border-color: var(--color-gold);
+      background: rgba(245, 184, 0, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 184, 0, 0.18);
+    }
+
+    .photos-dropzone-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(245, 184, 0, 0.12);
+      color: var(--color-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+    }
+
+    .photos-dropzone:hover .photos-dropzone-icon {
+      transform: scale(1.12);
+    }
+
+    .photos-dropzone-title {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.98rem;
+    }
+
+    .photos-dropzone-sub {
+      color: var(--color-text-subtle);
+      font-size: 0.82rem;
+      max-width: 440px;
+      line-height: 1.4;
+    }
+
+    .photos-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    .photo-preview-card {
+      position: relative;
+      background: #191924;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 16 / 11;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .photo-preview-card:hover {
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .photo-preview-card.is-cover {
+      border-color: var(--color-gold);
+      box-shadow: 0 0 0 1px var(--color-gold), 0 6px 18px rgba(245, 184, 0, 0.3);
+    }
+
+    .photo-preview-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-badge-cover {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: linear-gradient(135deg, #f5b800, #ff8c00);
+      color: #000000;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+      z-index: 2;
+    }
+
+    .photo-actions-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.68);
+      backdrop-filter: blur(2px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 6px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 3;
+    }
+
+    .photo-preview-card:hover .photo-actions-overlay {
+      opacity: 1;
+    }
+
+    .photo-action-btn-del {
+      align-self: flex-end;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(229, 25, 38, 0.9);
+      border: none;
+      color: #ffffff;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .photo-action-btn-del:hover {
+      background: #e51926;
+      transform: scale(1.18);
+    }
+
+    .photo-bottom-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .photo-nav-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #ffffff;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .photo-nav-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .photo-nav-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .photo-btn-make-cover {
+      background: rgba(245, 184, 0, 0.25);
+      border: 1px solid var(--color-gold);
+      color: #ffd54f;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .photo-btn-make-cover:hover {
+      background: var(--color-gold);
+      color: #000000;
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+  <!-- ========================================================================
+       TELA DE BLOQUEIO & GATE DE SEGURANÇA (LOGIN / AUTORIZAÇÃO POR SMS)
+       ======================================================================== -->
+  <div class="security-gate-overlay" id="adminLoginGate">
+    <div class="security-card">
+      <div class="security-logo-wrap">
+        <img src="assets/logo.png" alt="ND7 Garage Logo" class="security-logo-img" onerror="this.onerror=null; this.src='assets/logo_oficial.png';" />
+      </div>
+
+      <h2 class="security-title">Área do Lojista</h2>
+      <p class="security-subtitle">Painel restrito de gerenciamento da ND7 Garage</p>
+
+      <!-- Alternador de Método de Entrada -->
+      <div class="auth-method-nav">
+        <button type="button" class="auth-method-btn active" id="btnMethodPassword">
+          🔑 Senha do Painel
+        </button>
+        <button type="button" class="auth-method-btn" id="btnMethodEmail">
+          📧 Código por E-mail (Proprietário)
+        </button>
+      </div>
+
+      <!-- Método 1: Senha -->
+      <div class="auth-view active" id="viewPassword">
+        <div id="lockoutWarningMsg" style="display: none; background: rgba(255, 82, 82, 0.12); border: 1px solid #ff5252; color: #ff5252; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; text-align: center;"></div>
+        
+        <form id="loginPasswordForm">
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="loginPasswordInput">Senha de Acesso</label>
+            <div class="password-input-wrap">
+              <input 
+                type="password" 
+                id="loginPasswordInput" 
+                class="form-control" 
+                placeholder="Digite a senha de administrador..." 
+                required 
+                autocomplete="current-password"
+              />
+              <button type="button" class="password-toggle-btn" id="togglePasswordVisibility" title="Mostrar/ocultar senha">
+                👁️
+              </button>
+            </div>
+            <div id="passwordErrorMsg" style="color: #ff5252; font-size: 0.8rem; margin-top: 0.4rem; display: none;">
+              Senha incorreta. Tente novamente ou use a autorização por e-mail.
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; font-size: 0.82rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--color-text-muted);">
+              <input type="checkbox" id="rememberMeCheck" checked style="accent-color: var(--color-primary);" />
+              Lembrar por 7 dias
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+            Entrar no Painel
+          </button>
+        </form>
+      </div>
+
+      <!-- Método 2: Autorização Sigilosa por E-mail -->
+      <div class="auth-view" id="viewEmail">
+        <div id="otpStatusNotice" style="display: none; background: rgba(255, 184, 0, 0.12); border: 1px solid var(--color-gold); color: var(--color-gold); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; text-align: center;"></div>
+
+        <div class="otp-display-box" style="border-left: 3px solid var(--color-gold);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-gold); font-weight: 800;">
+              🔒 Envio Sigiloso por E-mail
+            </span>
+            <span style="font-size: 0.72rem; color: #00e676; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block;"></span> Automático
+            </span>
+          </div>
+          <p style="margin: 0; font-size: 0.82rem; color: var(--color-text-muted);">Destinatário Autorizado:</p>
+          <strong id="displayAuthPerson" style="color: #ffffff;">Proprietário ND7 Garage</strong>
+          <div style="font-size: 0.92rem; color: var(--color-gold); font-weight: 700; margin-top: 0.2rem; word-break: break-all;" id="displayAuthEmail">
+            c*****o@nd7garage.com.br
+          </div>
+        </div>
+
+        <!-- Passo A: Solicitar Envio Automático Silencioso -->
+        <div id="stepRequestOtp">
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 6px; padding: 0.9rem; margin-bottom: 1.25rem;">
+            <p style="font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; margin: 0;">
+              🛡️ <strong>Segurança da Loja:</strong> Um código de 6 dígitos será enviado <strong>automaticamente por e-mail</strong> para o proprietário. O código é <strong>confidencial e não é mostrado nesta tela</strong> para quem estiver pedindo o acesso.
+            </p>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-lg" id="btnRequestOtpCode" style="width: 100%;">
+            📧 Enviar Código por E-mail Agora
+          </button>
+        </div>
+
+        <!-- Passo B: Digitar Código Informado Pelo Proprietário -->
+        <div id="stepVerifyOtp" style="display: none;">
+          <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 6px; padding: 0.85rem; margin-bottom: 1.25rem; text-align: center;">
+            <div style="font-size: 1.05rem; font-weight: 700; color: #00e676; margin-bottom: 0.25rem;">
+              📨 ✓ E-mail Enviado com Sucesso!
+            </div>
+            <p style="font-size: 0.82rem; color: var(--color-text-muted); margin: 0; line-height: 1.4;">
+              O código foi enviado para a caixa de entrada (ou spam) do e-mail do proprietário. <strong>Peça a ele o código recebido</strong> para digitar abaixo:
+            </p>
+          </div>
+
+          <form id="verifyOtpForm">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label for="otpCodeInput" style="text-align: center; display: block; font-size: 0.85rem;">Digite os 6 dígitos recebidos no e-mail:</label>
+              <input 
+                type="text" 
+                id="otpCodeInput" 
+                class="form-control otp-input-field" 
+                placeholder="••••••" 
+                maxlength="6" 
+                required 
+                autocomplete="one-time-code"
+              />
+              <div id="otpErrorMsg" style="color: #ff5252; font-size: 0.8rem; margin-top: 0.4rem; display: none; text-align: center;">
+                Código inválido ou expirado. Peça o código correto ao proprietário.
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <button type="button" class="btn btn-outline" id="btnResendOtp" style="flex: 1;">
+                Reenviar E-mail
+              </button>
+              <button type="submit" class="btn btn-primary" style="flex: 1.5;">
+                Liberar Painel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contêiner do Painel Autenticado (Protegido contra inspeção indevida do DOM) -->
+  <div id="adminAppWrapper">
+
+    <!-- Faixa Estilo Racing Stripes -->
+    <div class="store-racing-stripe"></div>
+
+    <!-- Navbar Superior do Painel -->
+    <header class="admin-navbar">
+      <div class="admin-brand">
+        <a href="index.html" title="Ir para o site público">
+          <img src="assets/logo.png" alt="ND7 Garage" onerror="this.onerror=null; this.src='assets/logo_oficial.png';" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(245, 184, 0, 0.4);" />
+        </a>
+        <div>
+          <span class="admin-tag">Painel do Lojista</span>
+          <div style="font-size: 0.72rem; color: var(--color-text-subtle); margin-top: 0.2rem;">
+            Gestão de Estoque, Contatos e Segurança
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <a href="index.html" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+        Ver Site ao Vivo
+      </a>
+
+      <button type="button" class="btn btn-outline btn-sm" id="btnLogout" style="border-color: #ff3838; color: #ff5252;" title="Desconectar do painel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <!-- Abas de Navegação -->
+  <nav class="admin-tabs">
+    <button type="button" class="admin-tab-btn active" data-tab="tab-estoque">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      Gerenciar Estoque (<span id="tabCountBadge">16</span>)
+    </button>
+
+    <button type="button" class="admin-tab-btn" data-tab="tab-leads">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      👥 Contatos & Leads (<span id="leadsTabCountBadge">5</span>)
+    </button>
+
+    <button type="button" class="admin-tab-btn" data-tab="tab-loja">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      Dados da Loja & Contatos
+    </button>
+
+    <button type="button" class="admin-tab-btn" data-tab="tab-textos">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+      Textos & Banners
+    </button>
+
+    <button type="button" class="admin-tab-btn" data-tab="tab-seguranca">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      🔐 Senha & Autorização
+    </button>
+
+    <button type="button" class="admin-tab-btn" data-tab="tab-backup">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="21 15 21 19 3 19 3 15"></polyline>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Backup & Reset
+    </button>
+  </nav>
+
+  <!-- Conteúdo Principal -->
+  <main class="admin-main">
+
+    <!-- ======================================================================
+         ABA 1: GERENCIAR ESTOQUE (SELEÇÃO, EDIÇÃO E CADASTRO)
+         ====================================================================== -->
+    <div class="admin-tab-content active" id="tab-estoque">
+      <!-- KPIs do Estoque -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon blue">📦</div>
+          <div class="kpi-info">
+            <h4>Total no Banco</h4>
+            <div class="kpi-val" id="kpiTotal">16</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon green">👁️</div>
+          <div class="kpi-info">
+            <h4>Exibidos no Site</h4>
+            <div class="kpi-val" id="kpiVisiveis" style="color: #25d366;">16</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon orange">🚫</div>
+          <div class="kpi-info">
+            <h4>Ocultos do Site</h4>
+            <div class="kpi-val" id="kpiOcultos" style="color: #ff9800;">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon gold">⭐</div>
+          <div class="kpi-info">
+            <h4>Em Destaque</h4>
+            <div class="kpi-val" id="kpiDestaques" style="color: var(--color-gold);">6</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Ferramentas / Filtros -->
+      <div class="admin-toolbar">
+        <div class="admin-toolbar-left">
+          <input 
+            type="text" 
+            id="adminSearchInput" 
+            class="form-control" 
+            style="max-width: 280px; height: 42px;" 
+            placeholder="🔍 Buscar veículo por nome..." 
+          />
+
+          <select id="adminStatusFilter" class="select-filter" style="height: 42px;">
+            <option value="all">Status: Todos</option>
+            <option value="visible">Apenas Visíveis no Site</option>
+            <option value="hidden">Apenas Ocultos</option>
+            <option value="featured">Apenas Destaques ⭐</option>
+          </select>
+
+          <select id="adminCategoryFilter" class="select-filter" style="height: 42px;">
+            <option value="all">Categoria: Todas</option>
+            <option value="SUV">SUVs</option>
+            <option value="Sedan">Sedans</option>
+            <option value="Hatch">Hatches</option>
+            <option value="Picape">Picapes</option>
+            <option value="Moto">Motos</option>
+          </select>
+        </div>
+
+        <div class="admin-toolbar-right">
+          <button type="button" class="btn btn-outline btn-sm" id="btnToggleAllVisible" title="Exibir todos">
+            ✅ Ativar Todos
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnToggleAllHidden" title="Ocultar todos">
+            🚫 Ocultar Todos
+          </button>
+          <button type="button" class="btn btn-gold btn-sm" id="btnSyncCarroSp" title="Sincronizar estoque e atualizar preços com o CarroSP" style="background: linear-gradient(135deg, #f5b800, #ff9800); color: #000; font-weight: 700; border: none; display: inline-flex; align-items: center; gap: 0.45rem; box-shadow: 0 4px 12px rgba(245, 184, 0, 0.25); cursor: pointer; padding: 0.5rem 0.95rem; border-radius: var(--radius-sm); transition: all 0.2s ease;">
+            <svg id="syncIconSvg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span id="syncBtnText">🔄 Sincronizar CarroSP</span>
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnAddNewCar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            + Novo Veículo
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela de Veículos -->
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 75px;">Foto</th>
+              <th>Veículo & Versão</th>
+              <th>Categoria</th>
+              <th>Ano</th>
+              <th>Preço</th>
+              <th style="text-align: center;">Exibir no Site?</th>
+              <th style="text-align: center;">Destaque?</th>
+              <th style="text-align: right;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="adminVehiclesTbody">
+            <!-- Renderizado dinamicamente via admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         ABA 2: CONTATOS, LEADS & CRM (ATENDIMENTOS CAIO & EDUARDO)
+         ====================================================================== -->
+    <div class="admin-tab-content" id="tab-leads">
+      <!-- KPIs do CRM -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(245, 184, 0, 0.15); color: var(--color-gold);">
+            👥
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--color-text-subtle); font-weight: 600;">Total de Contatos</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;" id="kpiLeadsTotal">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 3px solid #38b6ff;">
+          <div class="kpi-icon" style="background: rgba(0, 140, 255, 0.15); color: #38b6ff;">
+            👤
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--color-text-subtle); font-weight: 600;">Atendimentos do Caio</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #38b6ff;" id="kpiLeadsCaio">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 3px solid #00e676;">
+          <div class="kpi-icon" style="background: rgba(0, 230, 118, 0.15); color: #00e676;">
+            👤
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--color-text-subtle); font-weight: 600;">Atendimentos do Eduardo</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #00e676;" id="kpiLeadsEduardo">0</div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 3px solid #ffca28;">
+          <div class="kpi-icon" style="background: rgba(255, 179, 0, 0.15); color: #ffca28;">
+            ⏳
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--color-text-subtle); font-weight: 600;">Aguardando Atendente</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #ffca28;" id="kpiLeadsWaiting">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Ferramentas / Filtros do CRM -->
+      <div class="lead-toolbar">
+        <div class="lead-search-box">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="text" 
+            id="leadSearchInput" 
+            class="lead-search-input-field" 
+            placeholder="🔍 Buscar por nome do lead, telefone ou veículo..." 
+            autocomplete="off"
+          />
+          <button type="button" class="lead-search-clear-btn" id="leadSearchClearBtn" title="Limpar busca">✕</button>
+        </div>
+
+        <div class="lead-filters-group">
+          <!-- Filtro por Atendente -->
+          <select id="leadAttendantFilter" class="lead-select-filter">
+            <option value="all">👤 Todos os Atendentes</option>
+            <option value="Caio">👤 Apenas Caio</option>
+            <option value="Eduardo">👤 Apenas Eduardo</option>
+            <option value="Aguardando">⏳ Aguardando Atendente</option>
+          </select>
+
+          <!-- Filtro por Status -->
+          <select id="leadStatusFilter" class="lead-select-filter">
+            <option value="all">📊 Todos os Status</option>
+            <option value="Novo Lead">🟡 Novo Lead</option>
+            <option value="Em Atendimento">🔵 Em Atendimento</option>
+            <option value="Visita Agendada">🟣 Visita Agendada</option>
+            <option value="Venda Concluída">🟢 Venda Concluída</option>
+            <option value="Arquivado">⚪ Arquivado / Futuro</option>
+          </select>
+
+          <!-- Botão Novo Lead -->
+          <button type="button" class="btn btn-primary btn-sm" id="btnAddNewLead" style="height: 46px; border-radius: 9999px; padding: 0 1.35rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; box-shadow: 0 4px 15px rgba(229, 25, 38, 0.35);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            + Novo Contato
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela de Leads -->
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 220px;">Cliente & Contato</th>
+              <th style="width: 240px;">O que Procura</th>
+              <th style="width: 190px;">Quem Está Atendendo?</th>
+              <th style="width: 140px;">Status</th>
+              <th>Observações / Negociação</th>
+              <th style="width: 170px; text-align: center;">Falar com Cliente</th>
+              <th style="width: 90px; text-align: right;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="adminLeadsTbody">
+            <!-- Renderizado dinamicamente via admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         ABA 3: DADOS DA LOJA & CONTATOS
+         ====================================================================== -->
+    <div class="admin-tab-content" id="tab-loja">
+      <div class="admin-form-card">
+        <h3>🏢 Informações Comerciais e Contatos</h3>
+        <p class="card-sub">
+          Edite as informações cadastrais da ND7 Garage. Qualquer alteração aqui é atualizada instantaneamente em todos os cabeçalhos, rodapés e botões de contato do site público.
+        </p>
+
+        <form id="storeInfoForm">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="storeName">Nome da Loja</label>
+              <input type="text" id="storeName" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+              <label for="storeSlogan">Slogan / Atividade Principal</label>
+              <input type="text" id="storeSlogan" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="storePhone1">Telefone Fixo (com DDD)</label>
+              <input type="text" id="storePhone1" class="form-control" placeholder="(19) 3629-3909" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeWhatsapp">WhatsApp de Atendimento (com DDD)</label>
+              <input type="text" id="storeWhatsapp" class="form-control" placeholder="(19) 99560-3366" required />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="storeEmail">E-mail Comercial</label>
+              <input type="email" id="storeEmail" class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeInstagram">Instagram Handle</label>
+              <input type="text" id="storeInstagram" class="form-control" placeholder="@nd7garage" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeInstagramUrl">URL Completa do Instagram</label>
+              <input type="url" id="storeInstagramUrl" class="form-control" placeholder="https://www.instagram.com/nd7garage/" />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="storeAddress">Endereço (Rua e Número)</label>
+              <input type="text" id="storeAddress" class="form-control" placeholder="Rua do Ósmio, 193 - Jardim Mollon" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeReference">Ponto de Referência</label>
+              <input type="text" id="storeReference" class="form-control" placeholder="Em frente ao Tivoli Shopping / Divisa com Americana" />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="storeCity">Cidade</label>
+              <input type="text" id="storeCity" class="form-control" placeholder="Santa Bárbara d'Oeste" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeState">Estado (UF)</label>
+              <input type="text" id="storeState" class="form-control" placeholder="SP" />
+            </div>
+
+            <div class="form-group">
+              <label for="storeCep">CEP</label>
+              <input type="text" id="storeCep" class="form-control" placeholder="13456-625" />
+            </div>
+          </div>
+
+          <h4 style="margin: 1.5rem 0 0.85rem; font-size: 1.05rem; color: #ffffff;">Horário de Atendimento</h4>
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="hoursWeekdays">Segunda a Sexta</label>
+              <input type="text" id="hoursWeekdays" class="form-control" placeholder="08:30 às 18:00" />
+            </div>
+
+            <div class="form-group">
+              <label for="hoursSaturday">Sábado</label>
+              <input type="text" id="hoursSaturday" class="form-control" placeholder="08:30 às 13:00" />
+            </div>
+
+            <div class="form-group">
+              <label for="hoursSunday">Domingo & Feriados</label>
+              <input type="text" id="hoursSunday" class="form-control" placeholder="Fechado (Atendimento WhatsApp)" />
+            </div>
+          </div>
+
+          <div style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary btn-lg">
+              💾 Salvar Dados da Loja
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         ABA 3: TEXTOS & BANNERS DO SITE
+         ====================================================================== -->
+    <div class="admin-tab-content" id="tab-textos">
+      <div class="admin-form-card">
+        <h3>📝 Textos do Hero e Sobre Nós</h3>
+        <p class="card-sub">
+          Personalize as chamadas em destaque, slogans e textos institucionais que aparecem na página inicial.
+        </p>
+
+        <form id="siteTextsForm">
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="heroTagInput">Selo Superior do Hero (Tag Vermelha)</label>
+            <input type="text" id="heroTagInput" class="form-control" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="heroDescInput">Descrição do Hero (Abaixo do Título)</label>
+            <textarea id="heroDescInput" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="aboutTitleInput">Título da Seção "Sobre Nós"</label>
+            <input type="text" id="aboutTitleInput" class="form-control" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="aboutTextInput">Texto da Seção "Sobre Nós"</label>
+            <textarea id="aboutTextInput" class="form-control" rows="4"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg">
+            💾 Salvar Textos do Site
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         ABA 4: SEGURANÇA, SENHA & AUTORIZAÇÃO (SMS/WHATSAPP)
+         ====================================================================== -->
+    <div class="admin-tab-content" id="tab-seguranca">
+      <div class="admin-form-card" style="margin-bottom: 2rem;">
+        <h3>🔐 Alterar Senha do Painel Administrativo</h3>
+        <p class="card-sub">
+          Modifique a senha mestra usada para acessar este painel. A nova senha passa a valer imediatamente.
+        </p>
+
+        <form id="changePasswordForm">
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="currentPasswordInput">Senha Atual *</label>
+              <input type="password" id="currentPasswordInput" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+              <label for="newPasswordInput">Nova Senha *</label>
+              <input type="password" id="newPasswordInput" class="form-control" minlength="4" required />
+            </div>
+
+            <div class="form-group">
+              <label for="confirmNewPasswordInput">Confirmar Nova Senha *</label>
+              <input type="password" id="confirmNewPasswordInput" class="form-control" minlength="4" required />
+            </div>
+          </div>
+
+          <div id="changePasswordMsg" style="margin-bottom: 1rem; font-size: 0.85rem; display: none;"></div>
+
+          <button type="submit" class="btn btn-primary">
+            💾 Atualizar Senha de Acesso
+          </button>
+        </form>
+      </div>
+
+      <div class="admin-form-card" style="margin-bottom: 2rem;">
+        <h3>📧 Pessoa & E-mail Cadastrado para Autorização Sigilosa</h3>
+        <p class="card-sub">
+          Cadastre o e-mail do proprietário ou gerente responsável. Quando alguém solicitar acesso sem a senha, um código confidencial de 6 dígitos será enviado <strong>diretamente para este e-mail</strong>. Quem está no computador solicitando o acesso <strong>NUNCA</strong> verá o código na tela.
+        </p>
+
+        <form id="authEmailForm">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="authPersonNameInput">Nome da Pessoa Autorizada *</label>
+              <input type="text" id="authPersonNameInput" class="form-control" placeholder="Ex: Proprietário ND7 Garage" required />
+            </div>
+
+            <div class="form-group">
+              <label for="authEmailInput">E-mail para Receber os Códigos de Acesso *</label>
+              <input type="email" id="authEmailInput" class="form-control" placeholder="Ex: nd7garage@gmail.com ou seu email..." required />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary">
+              💾 Salvar E-mail Autorizado
+            </button>
+            <button type="button" class="btn btn-outline" id="btnTestAuthEmail">
+              📧 Disparar Código de Teste para Este E-mail
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ======================================================================
+           GATEWAY & SERVIÇO DE DISPARO DE E-MAIL EM SEGUNDO PLANO
+           ====================================================================== -->
+      <div class="admin-form-card" style="margin-bottom: 2rem;">
+        <h3>📡 Serviço de Disparo de E-mail Automático</h3>
+        <p class="card-sub">
+          O sistema envia o e-mail de autorização automaticamente em segundo plano via serviço de entrega HTTP (FormSubmit / Webhook / EmailJS). Opcionalmente, você pode configurar um endpoint webhook customizado para sua infraestrutura.
+        </p>
+
+        <form id="emailGatewayForm">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="emailWebhookUrlInput">URL de Webhook Personalizada (Opcional)</label>
+              <input type="url" id="emailWebhookUrlInput" class="form-control" placeholder="Ex: https://formsubmit.co/ajax/seu-email@dominio.com ou webhook n8n" />
+            </div>
+
+            <div class="form-group">
+              <label for="emailApiKeyInput">Chave de API / Token de Autenticação (Opcional)</label>
+              <input type="password" id="emailApiKeyInput" class="form-control" placeholder="Bearer Token ou chave secreta..." />
+            </div>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <strong style="color: #ffffff; font-size: 0.9rem;">Status do Disparo por E-mail:</strong>
+                <div style="font-size: 0.8rem; color: #00e676; margin-top: 0.2rem;">
+                  ● Disparo Silencioso Ativo — Código vai direto para a caixa de entrada do proprietário
+                </div>
+              </div>
+              <div id="adminLastOtpBox" style="text-align: right; font-size: 0.82rem; color: var(--color-text-subtle); background: #12121a; padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px dashed var(--color-gold);">
+                Último código gerado (Visível apenas para você): <strong id="adminLastOtpDisplay" style="color: var(--color-gold); font-family: monospace; font-size: 1rem;">Nenhum</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary">
+              💾 Salvar Configurações de E-mail
+            </button>
+            <button type="button" class="btn btn-outline" id="btnTestSilentEmail">
+              📧 Testar Disparo de E-mail Agora
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-form-card">
+        <h3>📋 Log de Acessos Recentes</h3>
+        <p class="card-sub">Histórico dos últimos acessos concedidos a este painel:</p>
+        <div id="authLogsList" style="font-size: 0.85rem; color: var(--color-text-muted);">
+          <!-- Preenchido via admin.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         ABA 5: BACKUP & RESTAURAÇÃO
+         ====================================================================== -->
+    <div class="admin-tab-content" id="tab-backup">
+      <div class="admin-form-card">
+        <h3>💾 Backup, Exportação e Restauração</h3>
+        <p class="card-sub">
+          Exporte todos os seus veículos e configurações da loja para manter uma cópia segura ou restaure os dados para o padrão original da ND7 Garage.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="background: var(--color-bg-input); padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <h4 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: #ffffff;">📥 Exportar Backup Completo</h4>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+              Baixe um arquivo com todas as edições, veículos ativos/ocultos, contatos do CRM e configurações da loja.
+            </p>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline" id="btnExportJson">
+                📄 Baixar Backup JSON (.json)
+              </button>
+              <button type="button" class="btn btn-outline" id="btnExportSql" style="border-color: var(--color-gold); color: #ffd54f;">
+                🗄️ Baixar Banco de Dados SQL (.sql)
+              </button>
+            </div>
+          </div>
+
+          <!-- BANCO DE DADOS EM NUVEM (SUPABASE) -->
+          <div style="background: rgba(0, 230, 118, 0.04); padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid rgba(0, 230, 118, 0.25);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <h4 style="font-size: 1.1rem; color: #00e676; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                ☁️ Banco de Dados em Nuvem (Supabase - PostgreSQL)
+              </h4>
+              <span id="supabaseStatusBadge" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; border-radius: 20px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #bbb;">
+                ○ Modo Local (Navegador)
+              </span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--color-text-subtle); margin-bottom: 1.25rem; line-height: 1.45;">
+              Conecte seu site ao <strong>Supabase</strong> (serviço gratuito de PostgreSQL em nuvem). Com ele, quando você cadastrar ou editar um carro aqui no painel, ele atualizará <strong>instantaneamente em todos os celulares e computadores</strong> que acessarem o site pelo GitHub Pages!
+            </p>
+
+            <form id="supabaseConfigForm">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="supabaseUrlInput">URL do Projeto Supabase</label>
+                  <input type="url" id="supabaseUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co" />
+                </div>
+                <div class="form-group">
+                  <label for="supabaseKeyInput">Chave Anon Pública (anon key)</label>
+                  <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5..." />
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" id="btnSaveSupabaseConfig">
+                  💾 Salvar e Conectar Nuvem
+                </button>
+                <button type="button" class="btn btn-outline" id="btnSyncToSupabase" style="border-color: #00e676; color: #00e676;">
+                  🔄 Enviar Estoque & Leads para a Nuvem
+                </button>
+                <a href="database/README.md" target="_blank" class="btn btn-outline" style="border-color: var(--color-border); color: #fff; text-decoration: none;">
+                  📖 Ver Instruções do Banco (.sql)
+                </a>
+              </div>
+            </form>
+          </div>
+
+          <div style="background: var(--color-bg-input); padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <h4 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: #ffffff;">📤 Restaurar Backup de Arquivo</h4>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+              Selecione um arquivo de backup JSON salvo anteriormente para restaurar seu estoque e dados.
+            </p>
+            <input type="file" id="importFileInput" accept=".json" style="margin-bottom: 1rem; color: #fff;" />
+            <br>
+            <button type="button" class="btn btn-outline" id="btnImportJson">
+              Carregar Arquivo de Backup
+            </button>
+          </div>
+
+          <div style="background: rgba(229, 25, 38, 0.08); padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid rgba(229, 25, 38, 0.3);">
+            <h4 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: #ff5252;">⚠️ Restaurar Padrões de Fábrica</h4>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+              Esta ação restaura os 16 veículos originais sincronizados do CarroSP e redefine todas as informações da loja para os padrões originais.
+            </p>
+            <button type="button" class="btn btn-primary" id="btnResetDefaults" style="background: #c60000;">
+              Restaurar Dados Originais (CarroSP)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       MODAL DE CADASTRO / EDIÇÃO DE VEÍCULO
+       ======================================================================== -->
+  <div class="modal-backdrop" id="editCarModal" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 800px;">
+      <button class="modal-close-btn" id="editModalCloseBtn" aria-label="Fechar">&times;</button>
+      
+      <div style="padding: 2rem;">
+        <h3 id="editModalTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Editar Veículo</h3>
+        <p style="color: var(--color-text-subtle); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Altere as especificações técnicas, preço, fotos e visibilidade deste modelo.
+        </p>
+
+        <form id="carEditForm">
+          <input type="hidden" id="editCarId" />
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="editCarName">Nome / Título Completo *</label>
+              <input type="text" id="editCarName" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+              <label for="editCarBrand">Marca *</label>
+              <input type="text" id="editCarBrand" class="form-control" placeholder="Ex: HONDA, JEEP, TOYOTA" required />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="editCarModel">Modelo *</label>
+              <input type="text" id="editCarModel" class="form-control" placeholder="Ex: Civic, Commander" required />
+            </div>
+
+            <div class="form-group">
+              <label for="editCarVersion">Versão Detalhada</label>
+              <input type="text" id="editCarVersion" class="form-control" placeholder="Ex: 2.0 Sport Flex" />
+            </div>
+
+            <div class="form-group">
+              <label for="editCarCategory">Categoria *</label>
+              <select id="editCarCategory" class="select-filter" style="width: 100%;">
+                <option value="SUV">SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="Hatch">Hatch</option>
+                <option value="Picape">Picape</option>
+                <option value="Moto">Moto</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="editCarYear">Ano Fabricação/Modelo *</label>
+              <input type="number" id="editCarYear" class="form-control" min="1930" max="2030" required />
+            </div>
+
+            <div class="form-group">
+              <label for="editCarPrice">Preço (R$) *</label>
+              <input type="number" id="editCarPrice" class="form-control" min="0" step="100" required />
+            </div>
+
+            <div class="form-group">
+              <label for="editCarKm">Quilometragem *</label>
+              <input type="text" id="editCarKm" class="form-control" placeholder="Ex: 44.000 km" required />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="editCarTransmission">Câmbio</label>
+              <select id="editCarTransmission" class="select-filter" style="width: 100%;">
+                <option value="Automático">Automático</option>
+                <option value="Automático CVT">Automático CVT</option>
+                <option value="Manual">Manual</option>
+                <option value="Manual (6 marchas)">Manual (6 marchas)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editCarFuel">Combustível</label>
+              <select id="editCarFuel" class="select-filter" style="width: 100%;">
+                <option value="Flex">Flex</option>
+                <option value="Gasolina">Gasolina</option>
+                <option value="Diesel">Diesel</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editCarColor">Cor</label>
+              <input type="text" id="editCarColor" class="form-control" placeholder="Ex: Branco, Preto, Prata" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span style="font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 0.4rem;">
+                📷 Fotos do Veículo (Upload do Computador ou Celular)
+              </span>
+              <span id="photosCountBadge" style="font-size: 0.75rem; color: var(--color-gold); font-weight: 700; background: rgba(245, 184, 0, 0.12); padding: 0.2rem 0.65rem; border-radius: 20px; border: 1px solid rgba(245, 184, 0, 0.3);">0 fotos</span>
+            </label>
+
+            <!-- Dropzone / Área de Upload Direto -->
+            <div id="photosDropzone" class="photos-dropzone">
+              <div class="photos-dropzone-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="photos-dropzone-title">Clique para selecionar as fotos ou arraste os arquivos aqui</div>
+              <div class="photos-dropzone-sub">
+                Selecione uma ou <strong>várias fotos de uma vez</strong> direto do seu dispositivo. Sem precisar de link!
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btnSelectPhotos" style="margin-top: 0.25rem; border-color: var(--color-gold); color: #ffd54f;">
+                📁 Escolher Fotos do Computador
+              </button>
+              <input type="file" id="editCarPhotosInput" multiple accept="image/*" style="display: none;" />
+            </div>
+
+            <!-- Galeria de Fotos Selecionadas (Reordenação, Exclusão e Capa) -->
+            <div id="photosPreviewGrid" class="photos-preview-grid">
+              <!-- Renderizado dinamicamente via admin.js -->
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--color-text-subtle); margin-top: 0.65rem; line-height: 1.4;">
+              💡 <strong>Dica:</strong> A foto marcada como <span style="color: var(--color-gold); font-weight: 700;">★ CAPA</span> será a foto principal do anúncio. Você pode definir qualquer foto como capa clicando em "Tornar Capa" ou reorganizar a ordem usando as setas ◀ ▶.
+            </div>
+            
+            <input type="hidden" id="editCarImage" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="editCarBadges">Etiquetas / Badges (separadas por vírgula)</label>
+            <input type="text" id="editCarBadges" class="form-control" placeholder="Ex: 7 Lugares, Diesel 4x4, Baixa KM" />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="editCarDesc">Descrição do Veículo</label>
+            <textarea id="editCarDesc" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="editCarFeatures">Opcionais e Equipamentos (um por linha)</label>
+            <textarea id="editCarFeatures" class="form-control" rows="4" placeholder="Ar-condicionado digital&#10;Bancos em couro&#10;Câmera de ré&#10;Teto solar"></textarea>
+          </div>
+
+          <div style="background: var(--color-bg-input); padding: 1rem; border-radius: var(--radius-sm); display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer; color: #ffffff; font-weight: 700;">
+              <input type="checkbox" id="editCarVisible" style="width: 18px; height: 18px; accent-color: var(--color-whatsapp);" checked />
+              <span>Exibir este veículo no Site Público</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer; color: var(--color-gold); font-weight: 700;">
+              <input type="checkbox" id="editCarFeatured" style="width: 18px; height: 18px; accent-color: var(--color-gold);" />
+              <span>Destacar no Topo ⭐</span>
+            </label>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" class="btn btn-outline" id="editModalCancelBtn">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Veículo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL DE CADASTRO / EDIÇÃO DE CONTATO & LEAD (CRM)
+       ======================================================================== -->
+  <div class="modal-backdrop" id="leadModal" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <button class="modal-close-btn" id="leadModalCloseBtn" aria-label="Fechar">&times;</button>
+      
+      <div style="padding: 2rem;">
+        <h3 id="leadModalTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Novo Contato / Lead</h3>
+        <p style="color: var(--color-text-subtle); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Cadastre as informações da pessoa para acompanhamento futuro e defina quem está responsável pelo atendimento (Caio ou Eduardo).
+        </p>
+
+        <form id="leadForm">
+          <input type="hidden" id="leadFormId" />
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="leadFormName">Nome do Cliente *</label>
+              <input type="text" id="leadFormName" class="form-control" placeholder="Ex: Marcelo Silva" required />
+            </div>
+
+            <div class="form-group">
+              <label for="leadFormPhone">Telefone / WhatsApp com DDD *</label>
+              <input type="tel" id="leadFormPhone" class="form-control" placeholder="Ex: (19) 99888-7766" required />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="leadFormLookingFor">O que Procura? (Carro / Modelo / Categoria) *</label>
+              <input type="text" id="leadFormLookingFor" class="form-control" placeholder="Ex: Civic 2021, SUV automático, etc." required />
+            </div>
+
+            <div class="form-group">
+              <label for="leadFormBudget">Orçamento / Valor Disponível</label>
+              <input type="text" id="leadFormBudget" class="form-control" placeholder="Ex: Até R$ 120.000" />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="leadFormAttendant">Quem está atendendo? *</label>
+              <select id="leadFormAttendant" class="select-filter" style="width: 100%;">
+                <option value="Caio">👤 Caio</option>
+                <option value="Eduardo">👤 Eduardo</option>
+                <option value="Aguardando">⏳ Aguardando Atendente</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="leadFormStatus">Status do Atendimento *</label>
+              <select id="leadFormStatus" class="select-filter" style="width: 100%;">
+                <option value="Novo Lead">🟡 Novo Lead</option>
+                <option value="Em Atendimento">🔵 Em Atendimento</option>
+                <option value="Visita Agendada">🟣 Visita Agendada</option>
+                <option value="Venda Concluída">🟢 Venda Concluída</option>
+                <option value="Arquivado">⚪ Arquivado / Futuro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="leadFormSource">Origem do Contato</label>
+              <input type="text" id="leadFormSource" class="form-control" placeholder="Ex: Site, WhatsApp, Loja Física..." />
+            </div>
+
+            <div class="form-group">
+              <label for="leadFormEmail">E-mail do Cliente (Opcional)</label>
+              <input type="email" id="leadFormEmail" class="form-control" placeholder="cliente@email.com" />
+            </div>
+
+            <div class="form-group">
+              <label for="leadFormCreatedAt">Data / Hora de Entrada</label>
+              <input type="text" id="leadFormCreatedAt" class="form-control" placeholder="DD/MM/AAAA HH:MM" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="leadFormNotes">Observações / Histórico de Negociação (Carro na troca, detalhes, etc.)</label>
+            <textarea id="leadFormNotes" class="form-control" rows="4" placeholder="Ex: Tem Onix 2018 para dar na troca, prefere automático, compra com financiamento..."></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" class="btn btn-outline" id="leadModalCancelBtn">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar Contato</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  </div> <!-- /#adminAppWrapper -->
+
+  <!-- Container de Toasts -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="database/db_adapter.js"></script>
+  <script src="vehicles.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
